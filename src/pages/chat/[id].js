@@ -2,6 +2,7 @@
 // src/pages/chat/[id].js
 
 import { useRouter } from 'next/router';
+import { useEffect } from 'react'; // ✅ ADDED MISSING IMPORT
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import Layout from '@/components/layout/Layout';
@@ -15,7 +16,7 @@ export default function ChatPage() {
   const { setActiveChat } = useChat();
 
   // Set active chat when component mounts or id changes
-  useEffect(() => {
+  useEffect(() => { // ✅ NOW useEffect IS DEFINED
     if (id) {
       setActiveChat(id);
     }
