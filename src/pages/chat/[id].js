@@ -2,7 +2,7 @@
 // src/pages/chat/[id].js
 
 import { useRouter } from 'next/router';
-import { useEffect } from 'react'; // ✅ ADDED MISSING IMPORT
+import { useEffect, useState } from 'react'; // ✅ Added useState
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import Layout from '@/components/layout/Layout';
@@ -14,15 +14,28 @@ export default function ChatPage() {
   const { id } = router.query;
   const { user, loading: authLoading } = useAuth();
   const { setActiveChat } = useChat();
+  const [isClient, setIsClient] = useState(false); // ✅ Client-side check
+
+  // ✅ Only use router on client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Set active chat when component mounts or id changes
-  useEffect(() => { // ✅ NOW useEffect IS DEFINED
-    if (id) {
+  useEffect(() => {
+    if (id && isClient) { // ✅ Only on client
       setActiveChat(id);
     }
-  }, [id, setActiveChat]);
+  }, [id, setActiveChat, isClient]);
 
-  if (authLoading) {
+  // ✅ Client-side redirect
+  useEffect(() => {
+    if (isClient && !user && !authLoading) {
+      router.push('/');
+    }
+  }, [user, authLoading, router, isClient]);
+
+  if (authLoading || !isClient) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader size="xl" />
@@ -31,8 +44,7 @@ export default function ChatPage() {
   }
 
   if (!user) {
-    router.push('/');
-    return null;
+    return null; // Will redirect via useEffect
   }
 
   return (
