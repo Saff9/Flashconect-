@@ -1,28 +1,35 @@
 // FlashConnect - Login Page
 // src/pages/auth/login.js
 
-import { useEffect, useState } from 'react'; // ✅ Added useState
-import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Login from '@/components/auth/Login';
 import { Loader } from '@/components/ui/Loader';
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
-  const router = useRouter();
-  const [isClient, setIsClient] = useState(false); // ✅ Client-side check
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
+    setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (isClient && user && !loading) {
-      router.push('/chat');
-    }
-  }, [user, loading, router, isClient]);
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader size="xl" />
+      </div>
+    );
+  }
 
-  if (loading || !isClient) {
+  // Client-side redirect
+  useEffect(() => {
+    if (mounted && user && !loading) {
+      window.location.href = '/chat';
+    }
+  }, [user, loading, mounted]);
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader size="xl" />
@@ -31,7 +38,7 @@ export default function LoginPage() {
   }
 
   if (user) {
-    return null; // Will redirect
+    return null;
   }
 
   return <Login />;
