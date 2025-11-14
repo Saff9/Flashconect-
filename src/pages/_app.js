@@ -6,8 +6,20 @@ import { ChatProvider } from '@/contexts/ChatContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import '@/styles/globals.css';
 import { Toaster } from 'react-hot-toast';
+import { useEffect, useState } from 'react';
 
 export default function App({ Component, pageProps }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Prevent SSR for context providers
+  if (!mounted) {
+    return <div />;
+  }
+
   return (
     <ThemeProvider>
       <AuthProvider>
