@@ -1,13 +1,20 @@
-// FlashConnect - Login Component with Error Handling
+// FlashConnect - Login Component with Google + Email + Phone
 // src/components/auth/Login.jsx
 
 import { useState } from 'react';
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { 
+  signInWithPopup, 
+  GoogleAuthProvider,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword 
+} from 'firebase/auth';
 import { auth } from '@/utils/firebase';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import PhoneAuth from './PhoneAuth';
+import EmailAuth from './EmailAuth';
 import { Button } from '@/components/ui/Button';
 import { Loader } from '@/components/ui/Loader';
+import { Input } from '@/components/ui/Input';
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
@@ -20,28 +27,40 @@ export default function Login() {
       setLoading(true);
       setError('');
       
-      // Debug current domain
-      console.log('🔧 Attempting Google login from:', window.location.hostname);
+      console.log('🔧 Attempting Google login...');
       
       const provider = new GoogleAuthProvider();
+      // Add scopes if needed
+      provider.addScope('email');
+      provider.addScope('profile');
+      
       await signInWithPopup(auth, provider);
       trackLogin('google');
     } catch (error) {
       console.error('❌ Google login error:', error);
-      setError(`Login failed: ${error.message}`);
       
       // Specific error handling
-      if (error.code === 'auth/unauthorized-domain') {
-        setError('Domain not authorized. Please contact support.');
+      if (error.code === 'auth/operation-not-allowed') {
+        setError('Google login is not enabled. Please contact administrator.');
+      } else if (error.code === 'auth/unauthorized-domain') {
+        setError('This domain is not authorized for login.');
       } else if (error.code === 'auth/popup-blocked') {
         setError('Popup was blocked. Please allow popups for this site.');
       } else if (error.code === 'auth/popup-closed-by-user') {
         setError('Login cancelled.');
+      } else {
+        setError(`Login failed: ${error.message}`);
       }
     } finally {
       setLoading(false);
     }
   };
+
+  const tabs = [
+    { id: 'google', name: 'Google', icon: '🔍' },
+    { id: 'email', name: 'Email', icon: '📧' },
+    { id: 'phone', name: 'Phone', icon: '📱' }
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -55,44 +74,57 @@ export default function Login() {
         {/* Error Display */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 m-4 rounded-lg">
-            <strong>Error:</strong> {error}
-            <div className="text-sm mt-1">
-              Current domain: <code>{typeof window !== 'undefined' ? window.location.hostname : ''}</code>
+            <div className="flex items-start gap-3">
+              <div className="flex-1">
+                <strong>Login Error:</strong> {error}
+                {error.includes('not enabled') && (
+                  <div className="text-sm mt-2 p-2 bg-red-100 rounded">
+                    <strong>Fix this in Firebase Console:</strong>
+                    <br />1. Go to <strong>Authentication → Sign-in method</strong>
+                    <br />2. Enable <strong>Google</strong> and <strong>Email/Password</strong>
+                  </div>
+                )}
+              </div>
+              <button 
+                onClick={() => setError('')}
+                className="text-red-500 hover:text-red-700"
+              >
+                ✕
+              </button>
             </div>
           </div>
         )}
 
         {/* Tabs */}
         <div className="flex border-b">
-          <button
-            className={`flex-1 py-4 font-medium ${
-              activeTab === 'google'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-500'
-            }`}
-            onClick={() => setActiveTab('google')}
-          >
-            Google
-          </button>
-          <button
-            className={`flex-1 py-4 font-medium ${
-              activeTab === 'phone'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-500'
-            }`}
-            onClick={() => setActiveTab('phone')}
-          >
-            Phone
-          </button>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setError('');
+              }}
+              className={`flex-1 py-4 font-medium text-sm ${
+                activeTab === tab.id
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-lg">{tab.icon}</span>
+                <span>{tab.name}</span>
+              </div>
+            </button>
+          ))}
         </div>
 
         {/* Content */}
         <div className="p-6">
-          {activeTab === 'google' ? (
+          {activeTab === 'google' && (
             <div className="text-center">
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-800 mb-2">
-                  Welcome Back
+                  Welcome to FlashConnect
                 </h2>
                 <p className="text-gray-600">
                   Sign in with Google to continue
@@ -120,14 +152,18 @@ export default function Login() {
               </Button>
 
               {/* Debug Info */}
-              <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-600">
-                <div><strong>Domain:</strong> {typeof window !== 'undefined' ? window.location.hostname : 'Loading...'}</div>
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg text-xs text-blue-700">
+                <div><strong>Current Domain:</strong> {typeof window !== 'undefined' ? window.location.hostname : 'Loading...'}</div>
                 <div><strong>Firebase Project:</strong> genz-owaisblog</div>
+                <div className="mt-1 text-blue-600">
+                  If Google login fails, check Firebase Console → Authentication → Sign-in method
+                </div>
               </div>
             </div>
-          ) : (
-            <PhoneAuth />
           )}
+
+          {activeTab === 'email' && <EmailAuth />}
+          {activeTab === 'phone' && <PhoneAuth />}
         </div>
 
         {/* Footer */}
