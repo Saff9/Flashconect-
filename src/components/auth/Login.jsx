@@ -1,9 +1,10 @@
-// FlashConnect - Login Component
+// FlashConnect - Login Component with Analytics
 // src/components/auth/Login.jsx
 
 import { useState } from 'react';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '@/utils/firebase';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import PhoneAuth from './PhoneAuth';
 import { Button } from '@/components/ui/Button';
 import { Loader } from '@/components/ui/Loader';
@@ -11,17 +12,23 @@ import { Loader } from '@/components/ui/Loader';
 export default function Login() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('google');
+  const { trackLogin } = useAnalytics();
 
   const googleLogin = async () => {
     try {
       setLoading(true);
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
+      trackLogin('google');
     } catch (error) {
       console.error('Google login error:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePhoneLogin = () => {
+    trackLogin('phone');
   };
 
   return (
@@ -51,7 +58,10 @@ export default function Login() {
                 ? 'text-blue-600 border-b-2 border-blue-600'
                 : 'text-gray-500'
             }`}
-            onClick={() => setActiveTab('phone')}
+            onClick={() => {
+              setActiveTab('phone');
+              handlePhoneLogin();
+            }}
           >
             Phone
           </button>
