@@ -1,4 +1,4 @@
-// FlashConnect - Login Component with Analytics
+// FlashConnect - Login Component with Error Handling
 // src/components/auth/Login.jsx
 
 import { useState } from 'react';
@@ -12,23 +12,35 @@ import { Loader } from '@/components/ui/Loader';
 export default function Login() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('google');
+  const [error, setError] = useState('');
   const { trackLogin } = useAnalytics();
 
   const googleLogin = async () => {
     try {
       setLoading(true);
+      setError('');
+      
+      // Debug current domain
+      console.log('🔧 Attempting Google login from:', window.location.hostname);
+      
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
       trackLogin('google');
     } catch (error) {
-      console.error('Google login error:', error);
+      console.error('❌ Google login error:', error);
+      setError(`Login failed: ${error.message}`);
+      
+      // Specific error handling
+      if (error.code === 'auth/unauthorized-domain') {
+        setError('Domain not authorized. Please contact support.');
+      } else if (error.code === 'auth/popup-blocked') {
+        setError('Popup was blocked. Please allow popups for this site.');
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        setError('Login cancelled.');
+      }
     } finally {
       setLoading(false);
     }
-  };
-
-  const handlePhoneLogin = () => {
-    trackLogin('phone');
   };
 
   return (
@@ -39,6 +51,16 @@ export default function Login() {
           <h1 className="text-3xl font-bold text-white mb-2">FlashConnect</h1>
           <p className="text-blue-100">Fast, Secure Messaging</p>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 m-4 rounded-lg">
+            <strong>Error:</strong> {error}
+            <div className="text-sm mt-1">
+              Current domain: <code>{typeof window !== 'undefined' ? window.location.hostname : ''}</code>
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex border-b">
@@ -58,10 +80,7 @@ export default function Login() {
                 ? 'text-blue-600 border-b-2 border-blue-600'
                 : 'text-gray-500'
             }`}
-            onClick={() => {
-              setActiveTab('phone');
-              handlePhoneLogin();
-            }}
+            onClick={() => setActiveTab('phone')}
           >
             Phone
           </button>
@@ -99,6 +118,12 @@ export default function Login() {
                   </>
                 )}
               </Button>
+
+              {/* Debug Info */}
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-600">
+                <div><strong>Domain:</strong> {typeof window !== 'undefined' ? window.location.hostname : 'Loading...'}</div>
+                <div><strong>Firebase Project:</strong> genz-owaisblog</div>
+              </div>
             </div>
           ) : (
             <PhoneAuth />
