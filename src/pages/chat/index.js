@@ -3,25 +3,26 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/layout/Layout';
-import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react'; // ✅ Added useState
+import { useEffect, useState } from 'react';
 
 export default function ChatsPage() {
   const { user } = useAuth();
-  const router = useRouter();
-  const [isClient, setIsClient] = useState(false); // ✅ Client-side check
+  const [mounted, setMounted] = useState(false);
 
-  // ✅ Only use router on client side
   useEffect(() => {
-    setIsClient(true);
-    
-    if (!user) {
-      router.push('/');
-    }
-  }, [user, router]);
+    setMounted(true);
+  }, []);
 
-  // ✅ Show loading on server side
-  if (!isClient || !user) {
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Client-side only check
+  if (typeof window !== 'undefined' && !user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -40,12 +41,6 @@ export default function ChatsPage() {
           </div>
           <h2 className="text-2xl font-semibold text-gray-800 mb-2">Welcome to FlashConnect</h2>
           <p className="text-gray-600 mb-6">Select a chat from the sidebar to start messaging</p>
-          <button 
-            onClick={() => router.push('/chat/new')}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            Start New Chat
-          </button>
         </div>
       </div>
     </Layout>
