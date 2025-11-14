@@ -1,41 +1,35 @@
 // FlashConnect - Chat Page
 // src/pages/chat/[id].js
 
-import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react'; // ✅ Added useState
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useChat } from '@/contexts/ChatContext';
 import Layout from '@/components/layout/Layout';
-import ChatWindow from '@/components/chat/ChatWindow';
 import { Loader } from '@/components/ui/Loader';
 
-export default function ChatPage() {
-  const router = useRouter();
-  const { id } = router.query;
-  const { user, loading: authLoading } = useAuth();
-  const { setActiveChat } = useChat();
-  const [isClient, setIsClient] = useState(false); // ✅ Client-side check
+// Dynamic import for ChatWindow to avoid SSR issues
+const ChatWindow = dynamic(() => import('@/components/chat/ChatWindow'), {
+  ssr: false,
+  loading: () => <Loader size="xl" />
+});
 
-  // ✅ Only use router on client side
+import dynamic from 'next/dynamic';
+
+export default function ChatPage() {
+  const { user } = useAuth();
+  const [mounted, setMounted] = useState(false);
+  const [chatId, setChatId] = useState(null);
+
   useEffect(() => {
-    setIsClient(true);
+    setMounted(true);
+    // Get chatId from URL on client side only
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      const id = path.split('/').pop();
+      setChatId(id === 'chat' ? null : id);
+    }
   }, []);
 
-  // Set active chat when component mounts or id changes
-  useEffect(() => {
-    if (id && isClient) { // ✅ Only on client
-      setActiveChat(id);
-    }
-  }, [id, setActiveChat, isClient]);
-
-  // ✅ Client-side redirect
-  useEffect(() => {
-    if (isClient && !user && !authLoading) {
-      router.push('/');
-    }
-  }, [user, authLoading, router, isClient]);
-
-  if (authLoading || !isClient) {
+  if (!mounted) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader size="xl" />
@@ -43,13 +37,18 @@ export default function ChatPage() {
     );
   }
 
-  if (!user) {
-    return null; // Will redirect via useEffect
+  // Client-side only check
+  if (typeof window !== 'undefined' && !user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader size="xl" />
+      </div>
+    );
   }
 
   return (
     <Layout>
-      <ChatWindow chatId={id} />
+      {chatId ? <ChatWindow chatId={chatId} /> : <Loader size="xl" />}
     </Layout>
   );
 }
