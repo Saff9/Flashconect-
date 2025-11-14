@@ -4,15 +4,35 @@
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/layout/Layout';
 import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react'; // ✅ Added useState
 import { Button } from '@/components/ui/Button';
+import { Loader } from '@/components/ui/Loader'; // ✅ Added Loader
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const router = useRouter();
+  const [isClient, setIsClient] = useState(false); // ✅ Client-side check
+
+  // ✅ Only use router on client side
+  useEffect(() => {
+    setIsClient(true);
+    
+    if (!user) {
+      router.push('/');
+    }
+  }, [user, router]);
+
+  // ✅ Show loading on server side
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader size="xl" />
+      </div>
+    );
+  }
 
   if (!user) {
-    router.push('/');
-    return null;
+    return null; // Will redirect via useEffect
   }
 
   return (
