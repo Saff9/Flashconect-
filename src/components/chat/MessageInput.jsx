@@ -1,17 +1,20 @@
-// FlashConnect - Message Input Component
+// FlashConnect - Message Input Component with Analytics
 // src/components/chat/MessageInput.jsx
 
 import { useState } from 'react';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { Button } from '@/components/ui/Button';
 
 export default function MessageInput({ chatId }) {
   const [message, setMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const { trackMessageSent, trackFileUpload } = useAnalytics();
 
   const handleSend = () => {
     if (message.trim()) {
       // Implement send message logic
       console.log('Sending message:', message);
+      trackMessageSent('text');
       setMessage('');
     }
   };
@@ -26,17 +29,35 @@ export default function MessageInput({ chatId }) {
   const toggleRecording = () => {
     setIsRecording(!isRecording);
     // Implement voice recording logic
+    if (!isRecording) {
+      trackMessageSent('voice');
+    }
+  };
+
+  const handleFileUpload = (file) => {
+    // Implement file upload logic
+    console.log('Uploading file:', file);
+    trackFileUpload(file.type, file.size);
   };
 
   return (
     <div className="border-t border-gray-200 bg-white p-4">
       <div className="flex items-end gap-2">
         {/* File Upload Button */}
-        <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+        <label className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
+          <input
+            type="file"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (file) handleFileUpload(file);
+            }}
+            accept="image/*,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          />
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
           </svg>
-        </button>
+        </label>
 
         {/* Message Textarea */}
         <div className="flex-1 relative">
