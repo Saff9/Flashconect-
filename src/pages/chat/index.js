@@ -4,14 +4,29 @@
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/layout/Layout';
 import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react'; // ✅ Added useState
 
 export default function ChatsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const [isClient, setIsClient] = useState(false); // ✅ Client-side check
 
-  if (!user) {
-    router.push('/');
-    return null;
+  // ✅ Only use router on client side
+  useEffect(() => {
+    setIsClient(true);
+    
+    if (!user) {
+      router.push('/');
+    }
+  }, [user, router]);
+
+  // ✅ Show loading on server side
+  if (!isClient || !user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
   return (
