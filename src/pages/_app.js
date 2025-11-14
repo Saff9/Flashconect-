@@ -1,19 +1,23 @@
-// FlashConnect - Main App Component
+// FlashConnect - Main App Component with Analytics
 // src/pages/_app.js
 
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ChatProvider } from '@/contexts/ChatContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import { usePageView } from '@/hooks/useAnalytics';
 import '@/styles/globals.css';
 import { Toaster } from 'react-hot-toast';
 import { useEffect, useState } from 'react';
 
-export default function App({ Component, pageProps }) {
+function AppContent({ Component, pageProps }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Track page views
+  usePageView(typeof window !== 'undefined' ? document.title : 'FlashConnect');
 
   // Prevent SSR for context providers
   if (!mounted) {
@@ -39,4 +43,8 @@ export default function App({ Component, pageProps }) {
       </AuthProvider>
     </ThemeProvider>
   );
+}
+
+export default function App(props) {
+  return <AppContent {...props} />;
 }
