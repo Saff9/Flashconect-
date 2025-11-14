@@ -1,10 +1,11 @@
-// FlashConnect - Main App Component with Analytics
+// FlashConnect - Main App Component with Domain Check
 // src/pages/_app.js
 
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ChatProvider } from '@/contexts/ChatContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { usePageView } from '@/hooks/useAnalytics';
+import DomainCheck from '@/components/debug/DomainCheck';
 import '@/styles/globals.css';
 import { Toaster } from 'react-hot-toast';
 import { useEffect, useState } from 'react';
@@ -39,6 +40,8 @@ function AppContent({ Component, pageProps }) {
               },
             }}
           />
+          {/* Domain debug info - remove in production */}
+          <DomainCheck />
         </ChatProvider>
       </AuthProvider>
     </ThemeProvider>
